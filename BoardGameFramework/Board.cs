@@ -28,7 +28,7 @@ public abstract class Board {
     // This method simply validates first, before setting the grid location to the value
     if (IsValidMove(row, col)) {
       grid[row, col] = value;
-      }
+    }
   }
   public void RevertMove(int row, int col) {
     // Method to undo PlaceMove action. This method is called by MoveCommand.Undo() to reverse a move
