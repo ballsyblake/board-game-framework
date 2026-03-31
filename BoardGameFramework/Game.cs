@@ -15,9 +15,9 @@ public abstract class Game
         this.historyManager = historyManager;
         this.gameSaver = gameSaver;
     }
-
     public void PlayGame()
     {
+        // Template method
         InitialiseGame();
         int currentIndex = 0;
         while (!EndOfGame())
