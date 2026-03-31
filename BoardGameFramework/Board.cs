@@ -13,7 +13,6 @@ public abstract class Board {
     Cols = cols;
     grid = new string?[rows, cols];
   }
-
   public bool IsValidMove(int row, int col) {
     // This method checks if a piece in the game can be placed in a certain cell
     // It checks two things that must be true: position within bounds, and the cell is null (i.e., empty)
@@ -25,17 +24,21 @@ public abstract class Board {
       return false;
     }
   }
-
   public void PlaceMove(int row, int col, string value) {
+    // This method simply validates first, before setting the grid location to the value
+    if (IsValidMove(row, col)) {
+      grid[row, col] = value;
+      }
   }
-
   public void RevertMove(int row, int col) {
-
+    // Method to undo PlaceMove action. This method is called by MoveCommand.Undo() to reverse a move
+    grid[row, col] = null;
   }
+  // Method checks if the position is empty, and returns false if there's a value
+  public bool IsCellEmpty(int row, int col) => grid[row, col] == null;
 
-  public bool IsCellEmpty(int row, int col) {
 
-  }
+  
 
   public string? GetCell(int row, int col) {
 
