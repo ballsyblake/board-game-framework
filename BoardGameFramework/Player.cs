@@ -2,8 +2,8 @@ namespace BoardGameFramework;
 
 public abstract class Player {
     // Abstract class from which HumanPlayer and ComputerPlayer will inherit
-    public int PlayerNumber { get; set; }
-    public string GamePiece { get; set; }
+    public int PlayerNumber { get; }
+    public string GamePiece { get; }
     protected Player(int playerNumber, string gamePiece) {
         PlayerNumber = playerNumber;
         GamePiece = gamePiece;
