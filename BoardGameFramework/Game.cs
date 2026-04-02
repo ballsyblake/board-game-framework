@@ -51,9 +51,13 @@ public abstract class Game
     }
     public void SaveGame(string filePath)
     {
-        //Delegates to gameSaver.
+        //Delegates to gameSaver to save the current game state to a file located in filePath
+        gameSaver.SaveGame(this, filePath);
+        display.ShowMessage("Your game has been saved successfully.");
     }
     public void LoadGame(string filePath)
     {
         // Delegates to gameSaver. Restores board, players, history.
+        gameSaver.LoadGame(filePath);
+        display.ShowMessage("Your game has been loaded successfully.");
     }
