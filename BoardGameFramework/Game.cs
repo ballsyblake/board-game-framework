@@ -77,3 +77,4 @@ public abstract class Game
         gameSaver.LoadGame(filePath);
         display.ShowMessage("Your game has been loaded successfully.");
     }
+}
