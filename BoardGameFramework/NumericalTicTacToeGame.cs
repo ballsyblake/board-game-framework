@@ -15,24 +15,24 @@ public class NumericalTicTacToeGame : Game
         // board field is assigned in InitialiseGame; satisfy the compiler with a
         // temporary placeholder until then.
         _nttBoard = new NumericalTicTacToeBoard();
-        board = _nttBoard;
+        _board = _nttBoard;
     }
 
     protected override void InitialiseGame()
     {
         _nttBoard = new NumericalTicTacToeBoard();
-        board = _nttBoard;
+        _board = _nttBoard;
         _winner = null;
-        historyManager.Clear();
+        _historyManager.Clear();
 
         // GamePiece is used here purely as a label shown in messages. The actual pieces placed are the numbers chosen each turn.
-        players.Clear();
-        players.Add(new HumanPlayer(1, "Odd"));
-        players.Add(new HumanPlayer(2, "Even"));
-        currentPlayer = players[0];
+        _players.Clear();
+        _players.Add(new HumanPlayer(1, "Odd"));
+        _players.Add(new HumanPlayer(2, "Even"));
+        _currentPlayer = _players[0];
 
-        display.ShowMessage("=== Numerical Tic-Tac-Toe ===");
-        display.ShowHelp(
+        _display.ShowMessage("=== Numerical Tic-Tac-Toe ===");
+        _display.ShowHelp(
             "Player 1 places ODD numbers (1,3,5,7,9). " +
             "Player 2 places EVEN numbers (2,4,6,8). " +
             "First to make a row/col/diagonal sum to 15 wins!\n" +
@@ -41,20 +41,20 @@ public class NumericalTicTacToeGame : Game
 
     protected override void MakePlay(int playerIndex)
     {
-        currentPlayer = players[playerIndex];
-        bool isOddPlayer = currentPlayer.PlayerNumber == 1;
+        _currentPlayer = _players[playerIndex];
+        bool isOddPlayer = _currentPlayer.PlayerNumber == 1;
 
         // Show the current board state and whose turn it is.
-        display.ShowBoard(board);
+        _display.ShowBoard(_board);
         var available = _nttBoard.GetAvailableNumbers(isOddPlayer);
-        display.ShowMessage(
-            $"\nPlayer {currentPlayer.PlayerNumber} ({currentPlayer.GamePiece}) — " +
+        _display.ShowMessage(
+            $"\nPlayer {_currentPlayer.PlayerNumber} ({_currentPlayer.GamePiece}) — " +
             $"available numbers: [{string.Join(", ", available)}]");
 
         // Handle meta-commands first, then delegate move input to the player.
         while (true)
         {
-            string metaInput = display.GetInput("Command (undo/redo/save <path>) or press enter to move: ").Trim();
+            string metaInput = _display.GetInput("Command (undo/redo/save <path>) or press enter to move: ").Trim();
 
             if (metaInput.Equals("undo", StringComparison.OrdinalIgnoreCase))
             {
@@ -79,15 +79,15 @@ public class NumericalTicTacToeGame : Game
 
             if (metaInput.Length > 0)
             {
-                display.ShowMessage("Unknown command. Use undo, redo, save <path>, or press enter to make a move.");
+                _display.ShowMessage("Unknown command. Use undo, redo, save <path>, or press enter to make a move.");
                 continue;
             }
 
-            var (row, col, value) = currentPlayer.MakeMove(board, display);
+            var (row, col, value) = _currentPlayer.MakeMove(_board, _display);
 
             if (!int.TryParse(value, out int number))
             {
-                display.ShowMessage("Value must be a whole number between 1 and 9.");
+                _display.ShowMessage("Value must be a whole number between 1 and 9.");
                 continue;
             }
 
@@ -96,24 +96,24 @@ public class NumericalTicTacToeGame : Game
                 if (!_nttBoard.IsValidNTTMove(row, col, number, isOddPlayer))
                 {
                     if (number < 1 || number > 9)
-                        display.ShowMessage("Number must be between 1 and 9.");
+                        _display.ShowMessage("Number must be between 1 and 9.");
                     else if (number % 2 == 0 && isOddPlayer)
-                        display.ShowMessage("Player 1 must place ODD numbers.");
+                        _display.ShowMessage("Player 1 must place ODD numbers.");
                     else if (number % 2 != 0 && !isOddPlayer)
-                        display.ShowMessage("Player 2 must place EVEN numbers.");
+                        _display.ShowMessage("Player 2 must place EVEN numbers.");
                     else
-                        display.ShowMessage("That number has already been placed. Choose a different number.");
+                        _display.ShowMessage("That number has already been placed. Choose a different number.");
                     continue;
                 }
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                display.ShowMessage($"Invalid position: {ex.Message}");
+                _display.ShowMessage($"Invalid position: {ex.Message}");
                 continue;
             }
 
             var command = new MoveCommand(_nttBoard, row, col, number.ToString());
-            historyManager.Execute(command);
+            _historyManager.Execute(command);
             return;
         }
     }
@@ -122,7 +122,7 @@ public class NumericalTicTacToeGame : Game
     {
         if (_nttBoard.CheckWin())
         {
-            _winner = currentPlayer;
+            _winner = _currentPlayer;
             return true;
         }
 
@@ -137,18 +137,18 @@ public class NumericalTicTacToeGame : Game
 
     protected override void PrintWinner()
     {
-        display.ShowBoard(board);
+        _display.ShowBoard(_board);
         if (_winner != null)
-            display.ShowResult(
+            _display.ShowResult(
                 $"Player {_winner.PlayerNumber} ({_winner.GamePiece}) wins!");
         else
-            display.ShowResult("It's a draw! No line sums to 15.");
+            _display.ShowResult("It's a draw! No line sums to 15.");
     }
 
     public void RestoreFromSaveData(SaveData data)
     {
         _nttBoard = new NumericalTicTacToeBoard();
-        board = _nttBoard;
+        _board = _nttBoard;
         _winner = null;
 
         // Restore grid
@@ -164,14 +164,14 @@ public class NumericalTicTacToeGame : Game
         }
 
         // Restore players
-        players.Clear();
+        _players.Clear();
         foreach (var pd in data.Players)
         {
             Player p = pd.IsHuman ? new HumanPlayer(pd.PlayerNumber, pd.GamePiece) : (Player)new HumanPlayer(pd.PlayerNumber, pd.GamePiece); // extend for ComputerPlayer
-            players.Add(p);
+            _players.Add(p);
         }
 
-        currentPlayer = players.Count > data.CurrentPlayerIndex ? players[data.CurrentPlayerIndex] : players[0];
+        _currentPlayer = _players.Count > data.CurrentPlayerIndex ? _players[data.CurrentPlayerIndex] : _players[0];
     }
 
     public override SaveData ToSaveData()
@@ -191,8 +191,8 @@ public class NumericalTicTacToeGame : Game
             Rows = _nttBoard.Rows,
             Cols = _nttBoard.Cols,
             Grid = gridCopy,
-            CurrentPlayerIndex = players.IndexOf(currentPlayer),
-            Players = players.Select(p => new PlayerData
+            CurrentPlayerIndex = _players.IndexOf(_currentPlayer),
+            Players = _players.Select(p => new PlayerData
             {
                 PlayerNumber = p.PlayerNumber,
                 GamePiece = p.GamePiece,
