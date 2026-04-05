@@ -2,41 +2,41 @@ namespace BoardGameFramework;
 
 public class HistoryManager
 {
-    private readonly Stack<ICommand> undoStack = new Stack<ICommand>();
-    private readonly Stack<ICommand> redoStack = new Stack<ICommand>();
+    private readonly Stack<ICommand> _undoStack = new Stack<ICommand>();
+    private readonly Stack<ICommand> _redoStack = new Stack<ICommand>();
 
-    public bool CanUndo() => undoStack.Count > 0;
-    public bool CanRedo() => redoStack.Count > 0;
+    public bool CanUndo() => _undoStack.Count > 0;
+    public bool CanRedo() => _redoStack.Count > 0;
     
     //pushes new command to stack
     public void Execute(ICommand command)
     {
         command.Execute();
-        undoStack.Push(command);
-        redoStack.Clear(); 
+        _undoStack.Push(command);
+        _redoStack.Clear(); 
     }
 
     public void Undo()
     {
         if (!CanUndo()) return;
-        var command = undoStack.Pop();
+        var command = _undoStack.Pop();
         command.Undo();
-        redoStack.Push(command);
+        _redoStack.Push(command);
     }
 
     public void Redo()
     {
         if (!CanRedo()) return;
-        var command = redoStack.Pop();
+        var command = _redoStack.Pop();
         command.Execute();
-        undoStack.Push(command);
+        _undoStack.Push(command);
     }
 
     public void Clear()
     {
-        undoStack.Clear();
-        redoStack.Clear();
+        _undoStack.Clear();
+        _redoStack.Clear();
     }
 
-    public IEnumerable<ICommand> GetUndoHistory() => undoStack;
+    public IEnumerable<ICommand> GetUndoHistory() => _undoStack;
 }
