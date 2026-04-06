@@ -32,11 +32,13 @@ public class NumericalTicTacToeGame : Game
     }
 
     // Resets the board and history, then sets the starting player.
+    // Prompts for board size so the game can be played on any n×n grid (n ≥ 3).
     // Only creates default human players if none were injected via SetPlayers,
     // so that game mode selection from the menu is preserved.
     protected override void InitialiseGame()
     {
-        _nttBoard = new NumericalTicTacToeBoard();
+        int size = PromptBoardSize();
+        _nttBoard = new NumericalTicTacToeBoard(size);
         _board = _nttBoard;
         _winner = null;
         _historyManager.Clear();
@@ -48,12 +50,25 @@ public class NumericalTicTacToeGame : Game
         }
         _currentPlayer = _players[0];
 
-        _display.ShowMessage("=== Numerical Tic-Tac-Toe ===");
+        int maxNumber = size * size;
+        _display.ShowMessage($"=== Numerical Tic-Tac-Toe ({size}×{size}) ===");
         _display.ShowHelp(
-            "Player 1 places ODD numbers (1,3,5,7,9). " +
-            "Player 2 places EVEN numbers (2,4,6,8). " +
-            "First to make a row/col/diagonal sum to 15 wins!\n" +
+            $"Player 1 places ODD numbers. Player 2 places EVEN numbers. Numbers range from 1 to {maxNumber}.\n" +
+            $"First to make any row, column, or diagonal sum to {_nttBoard.TargetSum} wins!\n" +
             "Commands: move <row> <col> <value>  |  undo  |  redo  |  save <file>  |  load <file>  |  help  |  exit");
+    }
+
+    // Asks the player for a board size and keeps asking until they enter a valid integer ≥ 3.
+    // Pressing Enter without typing a number defaults to 3×3.
+    private int PromptBoardSize()
+    {
+        while (true)
+        {
+            string input = _display.GetInput("Enter board size (3 or more, press Enter for default 3×3): ").Trim();
+            if (string.IsNullOrEmpty(input)) return 3;
+            if (int.TryParse(input, out int size) && size >= 3) return size;
+            _display.ShowMessage("Board size must be a whole number of 3 or larger.");
+        }
     }
 
     // Runs one player's turn. Computer players move immediately; human players enter commands
@@ -102,8 +117,8 @@ public class NumericalTicTacToeGame : Game
                 {
                     if (!_nttBoard.IsValidNTTMove(row, col, number, isOddPlayer))
                     {
-                        if (number < 1 || number > 9)
-                            _display.ShowMessage("Number must be between 1 and 9.");
+                        if (number < 1 || number > _nttBoard.Rows * _nttBoard.Cols)
+                            _display.ShowMessage($"Number must be between 1 and {_nttBoard.Rows * _nttBoard.Cols}.");
                         else if (number % 2 == 0 && isOddPlayer)
                             _display.ShowMessage("Player 1 must place ODD numbers.");
                         else if (number % 2 != 0 && !isOddPlayer)
@@ -194,10 +209,11 @@ public class NumericalTicTacToeGame : Game
     }
 
     // Rebuilds the board and player list from saved data, then restores the undo/redo stacks.
+    // Uses data.Rows to reconstruct the correct board size — a saved 4×4 game must reload as 4×4.
     // PlaceNTTMove is used instead of PlaceMove so _usedNumbers is repopulated correctly.
     public override void RestoreFromSaveData(SaveData data)
     {
-        _nttBoard = new NumericalTicTacToeBoard();
+        _nttBoard = new NumericalTicTacToeBoard(data.Rows);
         _board = _nttBoard;
         _winner = null;
 

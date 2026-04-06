@@ -5,32 +5,43 @@ namespace BoardGameFramework.Games;
 // The board for Numerical Tic-Tac-Toe. Extends Board with NTT-specific rules:
 // each number can only be placed once across the whole game, and players are
 // restricted to odd or even numbers depending on which player they are.
+// Supports any board size n ≥ 3 — the win target scales with the magic square
+// formula n(n²+1)/2, and the number pools automatically cover 1 to n².
 public class NumericalTicTacToeBoard : Board
 {
     // Tracks which numbers have already been placed so duplicates are rejected
     private readonly HashSet<int> _usedNumbers = new HashSet<int>();
 
-    public NumericalTicTacToeBoard() : base(3, 3) { }
+    // The sum any complete row, column, or diagonal must reach to win.
+    // Derived from the board size: n(n²+1)/2.  For a 3×3 board this is 15,
+    // for 4×4 it is 34, for 5×5 it is 65, and so on.
+    public int TargetSum { get; }
+
+    // Defaults to 3×3 so the rest of the framework can create a board
+    // without knowing the size upfront (e.g. during deserialisation setup).
+    public NumericalTicTacToeBoard(int size = 3) : base(size, size)
+    {
+        TargetSum = size * (size * size + 1) / 2;
+    }
 
     // Returns only the numbers from the given player's pool that haven't been placed yet.
-    // Yielding one at a time avoids building an unnecessary intermediate list.
+    // The full pool is all odd (or even) numbers from 1 to n² — generated on the fly
+    // so this method works correctly for any board size without hard-coded arrays.
     public IEnumerable<int> GetAvailableNumbers(bool oddOnly)
     {
-        var pool = oddOnly
-            ? new[] { 1, 3, 5, 7, 9 }
-            : new[] { 2, 4, 6, 8 };
-
-        foreach (int n in pool)
+        int start = oddOnly ? 1 : 2;
+        for (int n = start; n <= Rows * Cols; n += 2)
             if (!_usedNumbers.Contains(n))
                 yield return n;
     }
 
     // Checks all three conditions a valid NTT move must satisfy:
-    // the cell must be empty, the number must not have been used before,
-    // and the number must belong to the current player's odd/even pool.
+    // the cell must be empty, the number must be in the valid range for this board size,
+    // it must not have been used before, and it must belong to the current player's pool.
     public bool IsValidNTTMove(int row, int col, int number, bool isOddPlayer)
     {
         if (!IsValidMove(row, col)) return false;
+        if (number < 1 || number > Rows * Cols) return false;
         if (_usedNumbers.Contains(number)) return false;
         bool numberIsOdd = number % 2 != 0;
         return numberIsOdd == isOddPlayer;
@@ -62,21 +73,21 @@ public class NumericalTicTacToeBoard : Board
         PlaceMove(row, col, number.ToString());
     }
 
-    // Checks every row, column, and diagonal to see if any line of three cells sums to 15.
-    // A line that contains an empty cell will never sum to 15 so no null checks are needed in the logic.
+    // Checks every row, column, and diagonal to see if any line sums to the target.
+    // Works for any board size because LineSum steps Rows times and uses TargetSum.
     public override bool CheckWin()
     {
         for (int r = 0; r < Rows; r++)
-            if (LineSum(r, 0, 0, 1) == 15) return true;
+            if (LineSum(r, 0, 0, 1) == TargetSum) return true;
 
         for (int c = 0; c < Cols; c++)
-            if (LineSum(0, c, 1, 0) == 15) return true;
+            if (LineSum(0, c, 1, 0) == TargetSum) return true;
 
         // Main diagonal (top-left → bottom-right)
-        if (LineSum(0, 0, 1, 1) == 15) return true;
+        if (LineSum(0, 0, 1, 1) == TargetSum) return true;
 
-        // Anti-diagonal (top-right → bottom-left)
-        if (LineSum(0, 2, 1, -1) == 15) return true;
+        // Anti-diagonal starts at top-right corner, which is column (n-1) for an n×n board
+        if (LineSum(0, Cols - 1, 1, -1) == TargetSum) return true;
 
         return false;
     }
@@ -90,13 +101,14 @@ public class NumericalTicTacToeBoard : Board
         return true;
     }
 
-    // Walks three cells in the direction given by (dRow, dCol) and returns their sum.
-    // Cells that are empty or non-numeric contribute 0, so partial lines never falsely trigger a win.
+    // Walks n cells in the direction given by (dRow, dCol) and returns their sum.
+    // Using Rows as the step count (rather than the old hardcoded 3) makes this
+    // correct for any square board size.
     private int LineSum(int startRow, int startCol, int dRow, int dCol)
     {
         int sum = 0;
         int r = startRow, c = startCol;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < Rows; i++)
         {
             string? cell = GetCell(r, c);
             if (cell != null && int.TryParse(cell, out int val))
